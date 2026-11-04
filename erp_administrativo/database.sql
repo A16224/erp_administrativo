@@ -1,0 +1,104 @@
+CREATE DATABASE IF NOT EXISTS erp_administrativo
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE erp_administrativo;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(120) NOT NULL,
+  usuario VARCHAR(60) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  rol ENUM('Administrador','Vendedor','Consulta') NOT NULL DEFAULT 'Administrador',
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS clientes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  tipo_documento VARCHAR(20) DEFAULT 'NIT',
+  documento VARCHAR(40) DEFAULT NULL,
+  nombre VARCHAR(180) NOT NULL,
+  telefono VARCHAR(40) DEFAULT NULL,
+  correo VARCHAR(150) DEFAULT NULL,
+  direccion VARCHAR(220) DEFAULT NULL,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_cliente_documento (documento)
+);
+
+CREATE TABLE IF NOT EXISTS productos (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  codigo VARCHAR(50) NOT NULL UNIQUE,
+  nombre VARCHAR(180) NOT NULL,
+  categoria VARCHAR(100) DEFAULT NULL,
+  costo DECIMAL(14,2) NOT NULL DEFAULT 0,
+  precio DECIMAL(14,2) NOT NULL DEFAULT 0,
+  existencia DECIMAL(14,3) NOT NULL DEFAULT 0,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ventas (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  numero VARCHAR(40) NOT NULL UNIQUE,
+  cliente_id INT UNSIGNED NULL,
+  usuario_id INT UNSIGNED NOT NULL,
+  fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  medio_pago ENUM('Efectivo','Transferencia','Tarjeta','Crédito','Otro') NOT NULL DEFAULT 'Efectivo',
+  estado ENUM('Pagada','Pendiente','Anulada') NOT NULL DEFAULT 'Pagada',
+  subtotal DECIMAL(14,2) NOT NULL DEFAULT 0,
+  impuestos DECIMAL(14,2) NOT NULL DEFAULT 0,
+  total DECIMAL(14,2) NOT NULL DEFAULT 0,
+  abonado DECIMAL(14,2) NOT NULL DEFAULT 0,
+  observaciones TEXT NULL,
+  FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  INDEX idx_ventas_fecha (fecha),
+  INDEX idx_ventas_estado (estado)
+);
+
+CREATE TABLE IF NOT EXISTS venta_detalles (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  venta_id BIGINT UNSIGNED NOT NULL,
+  producto_id INT UNSIGNED NULL,
+  descripcion VARCHAR(220) NOT NULL,
+  cantidad DECIMAL(14,3) NOT NULL,
+  costo_unitario DECIMAL(14,2) NOT NULL DEFAULT 0,
+  precio_unitario DECIMAL(14,2) NOT NULL,
+  impuesto_porcentaje DECIMAL(5,2) NOT NULL DEFAULT 0,
+  total_linea DECIMAL(14,2) NOT NULL,
+  FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE,
+  FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS movimientos_inventario (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT UNSIGNED NOT NULL,
+  usuario_id INT UNSIGNED NOT NULL,
+  tipo ENUM('Entrada','Salida','Ajuste') NOT NULL,
+  cantidad DECIMAL(14,3) NOT NULL,
+  motivo VARCHAR(220) NOT NULL,
+  fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (producto_id) REFERENCES productos(id),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+CREATE TABLE IF NOT EXISTS gastos (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT UNSIGNED NOT NULL,
+  concepto VARCHAR(180) NOT NULL,
+  categoria VARCHAR(100) DEFAULT NULL,
+  valor DECIMAL(14,2) NOT NULL,
+  fecha DATE NOT NULL,
+  observaciones TEXT NULL,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+CREATE TABLE IF NOT EXISTS auditoria (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT UNSIGNED NULL,
+  accion VARCHAR(100) NOT NULL,
+  detalle TEXT NULL,
+  ip VARCHAR(45) NULL,
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);

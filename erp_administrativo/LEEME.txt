@@ -1,0 +1,68 @@
+# ERP Administrativo (PHP + MySQL + XAMPP)
+
+## Instalación en Windows
+1. Extrae la carpeta `erp_administrativo` dentro de `C:\xampp\htdocs\`.
+2. Abre el panel de XAMPP y enciende Apache y MySQL.
+3. Entra en `http://localhost/phpmyadmin/` y verifica que MySQL esté funcionando.
+4. Abre `http://localhost/erp_administrativo/install.php`.
+5. Cuando aparezca la confirmación, entra en `http://localhost/erp_administrativo/login.php`.
+6. Acceso inicial: usuario `admin`, contraseña `Cambiar123!`.
+7. Cambia la contraseña inicial antes de utilizar el sistema con datos reales y elimina `install.php` tras instalar.
+
+## Módulos incluidos
+- Panel con resumen financiero del día.
+- Historial de ventas con filtros por fecha, estado y búsqueda.
+- Registro de ventas con varios productos, cálculo de impuesto configurable, abono y descuento automático de inventario.
+- Catálogo de productos y movimientos de entrada/salida.
+- Directorio de clientes y cartera calculada.
+- Registro de gastos.
+- Informe diario por período e impresión del navegador / Guardar como PDF.
+- Inicio de sesión, roles base, token CSRF y auditoría de accesos/ventas.
+
+## Configuración de MySQL
+Si tu usuario root tiene contraseña, modifica `DB_PASS` en `config/config.php`.
+`BASE_URL` está definida como `/erp_administrativo`; el proyecto espera esa carpeta bajo `htdocs`.
+
+## Límites importantes de esta primera versión
+- Es una base funcional inicial, no una copia del producto comercial de las fotos.
+- La facturación electrónica DIAN no está integrada; necesita proveedor tecnológico y configuración fiscal.
+- La aplicación de impuestos en la venta nueva es una tasa manual general. No reemplaza el tratamiento tributario de cada producto.
+- Los pagos parciales posteriores, compras a proveedores, exportación Excel y administración completa de usuarios son ampliaciones pendientes.
+- Los roles se almacenan pero la matriz de permisos por módulo aún debe implementarse antes de desplegar en producción.
+- Antes de publicar en internet, configura HTTPS, credenciales seguras, copias de seguridad, restricciones de instalación y revisión de seguridad.
+
+## Copias de seguridad
+Antes de actualizar, exporta la base de datos desde phpMyAdmin. No uses este sistema para datos reales hasta probar el proceso completo y asegurar los respaldos.
+
+
+## Reparar inicio de sesión sin perder datos
+Si la tabla `usuarios` está vacía o `admin` no puede iniciar sesión:
+1. Copia esta carpeta actualizada sobre la carpeta existente (no borres la base de datos).
+2. Enciende Apache y MySQL en XAMPP.
+3. Abre `http://localhost/erp_administrativo/install.php`. La instalación crea las tablas faltantes y crea admin solo si no existe; no vacía las tablas.
+4. Si admin ya existe pero no acepta la contraseña, abre `http://localhost/erp_administrativo/reparar_acceso.php`.
+5. Escribe exactamente `REPARAR ADMIN` y confirma. El usuario admin quedará con contraseña temporal `Cambiar123!`.
+6. Inicia sesión y elimina inmediatamente `reparar_acceso.php` e `install.php` de la carpeta del proyecto.
+
+La herramienta de reparación restablece únicamente la cuenta `admin`; no elimina ventas, productos ni clientes. Úsala solo localmente.
+
+
+## Módulo de usuarios y accesos
+- Solo el rol Administrador puede abrir usuarios.php.
+- El administrador crea cuentas de empleados con nombre, usuario, contraseña temporal y rol.
+- Roles disponibles: Administrador, Vendedor y Consulta.
+- Permite activar/desactivar cuentas y restablecer contraseñas.
+- Protege contra desactivar la propia cuenta y contra desactivar el último administrador activo.
+- Usa token CSRF y password_hash() para proteger contraseñas.
+- Registra eventos en la tabla auditoria.
+- Acceso desde el menú lateral: “Usuarios y accesos”.
+Nota: los roles se guardan y el módulo de gestión está protegido; una matriz detallada de permisos para cada módulo debe completarse y probarse antes de desplegar en producción.
+
+
+## Registro inicial del comprador
+- Después de instalar la base de datos, abre `http://localhost/erp_administrativo/registro.php`.
+- La primera persona crea el primer usuario administrador con su nombre, usuario y contraseña propia.
+- Las contraseñas deben tener al menos 10 caracteres y se guardan usando password_hash().
+- El registro público se cierra automáticamente cuando ya existe cualquier usuario. Los empleados posteriores se crean desde “Usuarios y accesos”.
+- Si vendes el software para instalación local, entrega a cada empresa su propia copia del proyecto y su propia base de datos.
+IMPORTANTE: esta versión está diseñada para instalaciones separadas por cliente. No alojes varias empresas en la misma base de datos compartida: no implementa aislamiento multiempresa completo.
